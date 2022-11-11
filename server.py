@@ -1,17 +1,20 @@
 import threading 
 import socket
+import database
 
 # localhost 
 host = '127.0.0.1'
 port = 7000
 
+# create socket and bind to port
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
 server.listen()
 
 clients = []
-nicknames = []
+usernames = []
+passwords = []
 
 # get all clients and send message to all clients
 def broadcast(message):
@@ -23,16 +26,21 @@ def handle(client):
     while True:
         try:
             # broadcast message
-            message = client.recv(1024)
-            broadcast(message)
+            message = client.recv(1024).decode('ascii')
+            username = client.recv(1024).decode('ascii')
+            recipient = [user for user in usernames if user != username]
+            database.insert_message(message, recipient, username)
+
+            broadcast_message = f"{username}: {message}".encode('ascii')
+            broadcast(broadcast_message)
         except:
             # remove and close client connection
             index = clients.index(client)
             clients.remove(client)
             client.close()
-            nickname = nickname[index]
-            broadcast(f'{nickname} has left the chat'.encode('ascii'))
-            nicknames.remove(nickname)
+            username = usernames[index]
+            broadcast(f'{username} has left the chat'.encode('ascii'))
+            usernames.remove(username)
             break
 
 # receive and broadcast messages
@@ -42,15 +50,20 @@ def receive():
         client, address = server.accept()
         print(f"Connected with {str(address)}")
 
-        # request and store nickname
-        client.send('NICK'.encode('ascii'))
-        nickname = client.recv(1024).decode('ascii')
-        nicknames.append(nickname)
+        # request and store username and password
+        client.send('USER'.encode('ascii'))
+        username = client.recv(1024).decode('ascii')
+        usernames.append(username)
+
+        client.send('PASS'.encode('ascii'))
+        password = client.recv(1024).decode('ascii')
+        passwords.append(password)
+
+        database.insert_user(username, password)
         clients.append(client)
 
-        # print and broadcast nickname
-        print(f"Nickname of the client is {nickname}")
-        broadcast(f"{nickname} joined the chat".encode('ascii'))
+        # print and broadcast username
+        broadcast(f"{username} joined the chat".encode('ascii'))
         client.send('Connected to the server'.encode('ascii'))
 
         # start handling thread for client
@@ -59,6 +72,11 @@ def receive():
 
 def main():
     print("Server is listening...")
+
+    # initialize database
+    database.initialize()
+    
+    # start receiving thread
     receive()
 
 if __name__ == "__main__":

@@ -1,13 +1,15 @@
 import threading
 import socket
 
-# choose a nickname
-nickname = input("Choose a nickname: ")
+# choose a username and password
+username = input("Choose a username: ")
+password = input("Choose a password: ")
 
 # localhost 
 host = '127.0.0.1'
 port = 7000
 
+# connect to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
 
@@ -15,10 +17,12 @@ def receive():
     while True:
         try:
             # receive message from server
-            # if 'NICK' send nickname
+            # if 'USER' send username, if 'PASS' send password, else print message
             message = client.recv(1024).decode('ascii')
-            if message == 'NICK':
-                client.send(nickname.encode('ascii'))
+            if message == 'USER':
+                client.send(username.encode('ascii'))
+            elif message == 'PASS':
+                client.send(password.encode('ascii'))
             else:
                 print(message)
         except:
@@ -29,9 +33,12 @@ def receive():
 
 def write():
     while True:
-        # send messages to server
-        message = f'{nickname}: {input("")}'
+        # send message to server
+        message = f'{input("")}'
         client.send(message.encode('ascii'))
+
+        # send username to server
+        client.send(username.encode('ascii'))
 
 def main():
     # start receiving thread
