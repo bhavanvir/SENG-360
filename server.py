@@ -30,7 +30,6 @@ def handle(client):
             username = client.recv(1024).decode('ascii')
             recipients = [user for user in usernames if user != username]
             database.insert_message(message, recipients, username)
-
             broadcast_message = f"{username}: {message}".encode('ascii')
             broadcast(broadcast_message)
         except:

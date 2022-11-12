@@ -1,6 +1,7 @@
 import sqlite3
 import uuid
 import datetime
+import bcrypt
 
 def initialize():
     con = sqlite3.connect('client_database.db')
@@ -23,13 +24,26 @@ def initialize():
     FOREIGN KEY (senderUUID) REFERENCES users (uuid))''')
     con.commit()
 
+
 def insert_user(username, password):
     username_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(username)))
-
+    password_salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), password_salt)
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
-    cur.execute("INSERT INTO users (uuid, username, password) VALUES (?, ?, ?)", (username_uuid, username, password))
+    cur.execute("INSERT INTO users (uuid, username, password) VALUES (?, ?, ?)", (username_uuid, username, hashed_password ))
     con.commit()
+
+def check_password(username,password):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    cur.execute("SELECT password FROM users WHERE username = (?)", (username,))
+    try:
+        records = cur.fetchall()[0]
+        password_valid = bcrypt.checkpw(password.encode('utf-8'), records[0])
+        return password_valid
+    except IndexError:
+        print(f"username {username} not found")
 
 def insert_message(message, recipients, sender):
     recipient_uuid = ""
