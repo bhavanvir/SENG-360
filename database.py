@@ -31,9 +31,17 @@ def insert_user(username, password):
     cur.execute("INSERT INTO users (uuid, username, password) VALUES (?, ?, ?)", (username_uuid, username, password))
     con.commit()
 
-def insert_message(message, recipient, sender):
+def insert_message(message, recipients, sender):
+    recipient_uuid = ""
+    if recipients:
+        for i in range(len(recipients)):
+            recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipients[i])))
+            if i != len(recipients) - 1:
+                recipient_uuid += ", "
+    elif not recipients:
+        recipient_uuid = None
+
     message_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(message)))
-    recipient_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipient)))
     sender_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(sender)))
 
     current_time = datetime.datetime.now()
