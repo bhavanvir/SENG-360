@@ -28,8 +28,8 @@ def handle(client):
             # broadcast message
             message = client.recv(1024).decode('ascii')
             username = client.recv(1024).decode('ascii')
-            recipient = [user for user in usernames if user != username]
-            database.insert_message(message, recipient, username)
+            recipients = [user for user in usernames if user != username]
+            database.insert_message(message, recipients, username)
 
             broadcast_message = f"{username}: {message}".encode('ascii')
             broadcast(broadcast_message)
@@ -63,6 +63,7 @@ def receive():
         clients.append(client)
 
         # print and broadcast username
+        print(f"Username of the client is {username}")
         broadcast(f"{username} joined the chat".encode('ascii'))
         client.send('Connected to the server'.encode('ascii'))
 
