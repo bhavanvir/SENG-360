@@ -14,7 +14,6 @@ server.listen()
 
 clients = []
 usernames = []
-passwords = []
 
 # get all clients and send message to all clients
 def broadcast(message):
@@ -49,6 +48,8 @@ def receive():
         client, address = server.accept()
         print(f"Connected with {str(address)}")
 
+        action = client.recv(1024).decode('ascii')
+
         # request and store username and password
         client.send('USER'.encode('ascii'))
         username = client.recv(1024).decode('ascii')
@@ -56,13 +57,32 @@ def receive():
 
         client.send('PASS'.encode('ascii'))
         password = client.recv(1024).decode('ascii')
-        passwords.append(password)
 
-        database.insert_user(username, password)
-        clients.append(client)
+        if action == "LOGIN":
+            if database.check_password(username, password):
+                print(f"Succeeded in logging in client with username {username}")
+                client.send(f"Successfully logged in as {username}".encode('ascii'))
+            else:
+                print(f"Failed in logging in client with username {username}")
+                client.send(f"Failed to log in as {username}".encode('ascii'))
+                client.send('FAIL'.encode('ascii'))
+                exit(1)
+        elif action == "REGISTER":
+            if database.insert_user(username, password):
+                clients.append(client)
+                print(f"Registered client with username {username}")
+            else:
+                client.send(f"{username} already exists".encode('ascii'))
+                client.send('FAIL'.encode('ascii'))
+                print(f"Attemped to register client with username {username}, but it already exists")
+
+                try:
+                    server.shutdown(socket.SHUT_RDWR)
+                    server.close()
+                except OSError:
+                    break
 
         # print and broadcast username
-        print(f"Username of the client is {username}")
         broadcast(f"{username} joined the chat".encode('ascii'))
         client.send('Connected to the server'.encode('ascii'))
 

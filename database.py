@@ -31,10 +31,14 @@ def insert_user(username, password):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), password_salt)
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
-    cur.execute("INSERT INTO users (uuid, username, password) VALUES (?, ?, ?)", (username_uuid, username, hashed_password ))
-    con.commit()
+    try:
+        cur.execute("INSERT INTO users (uuid, username, password) VALUES (?, ?, ?)", (username_uuid, username, hashed_password ))
+        con.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
 
-def check_password(username,password):
+def check_password(username, password):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
     cur.execute("SELECT password FROM users WHERE username = (?)", (username,))
@@ -43,7 +47,7 @@ def check_password(username,password):
         password_valid = bcrypt.checkpw(password.encode('utf-8'), records[0])
         return password_valid
     except IndexError:
-        print(f"username {username} not found")
+        pass
 
 def insert_message(message, recipients, sender):
     recipient_uuid = ""

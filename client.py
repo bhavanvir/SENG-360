@@ -1,9 +1,10 @@
 import threading
 import socket
+import os
 
 # choose a username and password
-username = input("Choose a username: ")
-password = input("Choose a password: ")
+username = ""
+password = ""
 
 # localhost 
 host = '127.0.0.1'
@@ -15,21 +16,22 @@ client.connect((host, port))
 
 def receive():
     while True:
-        try:
-            # receive message from server
-            # if 'USER' send username, if 'PASS' send password, else print message
-            message = client.recv(1024).decode('ascii')
-            if message == 'USER':
-                client.send(username.encode('ascii'))
-            elif message == 'PASS':
-                client.send(password.encode('ascii'))
-            else:
-                print(message)
-        except:
-            # close connection when error
-            print("An has error occured")
+        # receive message from server
+        # if 'USER' send username, if 'PASS' send password, else print message
+        message = client.recv(1024).decode('ascii')
+        if message == 'ACTION':
+            client.send('LOGIN'.encode('ascii'))
+        elif message == 'USER':
+            client.send(username.encode('ascii'))
+        elif message == 'PASS':
+            client.send(password.encode('ascii'))
+        elif message == 'FAIL':
+            client.shutdown(socket.SHUT_RDWR)
             client.close()
-            break
+            # dirty solution to force program to exit without waiting for threads to finish
+            os._exit(1)
+        else:
+            print(message)
 
 def write():
     while True:
@@ -41,6 +43,21 @@ def write():
         client.send(username.encode('ascii'))
 
 def main():
+    global username
+    global password 
+
+    query = input("Do you want to login or register?: ")
+    if query == "login":
+        client.send('LOGIN'.encode('ascii'))
+    elif query == "register":
+        client.send('REGISTER'.encode('ascii'))
+    else:
+        print("Invalid input")
+        main()
+    
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+
     # start receiving thread
     receive_thread = threading.Thread(target=receive)
     receive_thread.start()
@@ -48,6 +65,9 @@ def main():
     # start writing thread
     write_thread = threading.Thread(target=write)
     write_thread.start()
+
+    receive_thread.join()
+    write_thread.join()
 
 if __name__ == '__main__':
     main()
