@@ -22,7 +22,7 @@ Clone the Repository
 git clone https://github.com/bhavanvir/SENG-360.git
 
 Install dependencies
-TBD
+pip install -r requirements.txt
 
 Start the application
 TBD
