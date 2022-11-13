@@ -88,15 +88,16 @@ def receive():
                 if deleted:
                     print(f"Sucessfully deleted user {username}")
                     client.send(f"Sucessfully deleted user {username}".encode('ascii'))
-                    client.send(f"DELETE".encode('ascii'))
+                    client.send('DELETE_RETURN'.encode('ascii'))
                 else:
                     print(f"Error deleting user {username}")
                     client.send(f"Error deleting user {username}".encode('ascii'))
+                    client.send('DELETE_RETURN'.encode('ascii'))
+
             else:
                 print(f"Failed to find user {username}")
                 client.send(f"Invalid user credentials for {username}".encode('ascii'))
-                client.send('DELETE'.encode('ascii'))
-                exit(1)
+                client.send('DELETE_RETURN'.encode('ascii'))
 
         # Display successful authentication message
         if action != "DELETE":
