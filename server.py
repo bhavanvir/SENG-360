@@ -69,7 +69,6 @@ def receive():
                 exit(1)
         elif action == "REGISTER":
             if database.insert_user(username, password):
-                clients.append(client)
                 print(f"Registered client with username {username}")
             else:
                 client.send(f"{username} already exists".encode('ascii'))
@@ -81,10 +80,13 @@ def receive():
                     server.close()
                 except OSError:
                     break
+        clients.append(client)
 
         # print and broadcast username
         broadcast(f"{username} joined the chat".encode('ascii'))
         client.send('Connected to the server'.encode('ascii'))
+
+        #broadcast(f"\nEnter 'history' to your view chat history".encode('ascii'))
 
         # start handling thread for client
         thread = threading.Thread(target=handle, args=(client,))
