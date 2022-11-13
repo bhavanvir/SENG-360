@@ -38,6 +38,16 @@ def insert_user(username, password):
     except sqlite3.IntegrityError:
         return False
 
+def delete_user(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    try:
+        cur.execute("DELETE FROM users WHERE username = (?)", (username,))
+        con.commit()
+        return True
+    except:
+        return False
+
 def check_password(username, password):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
