@@ -69,3 +69,17 @@ def insert_message(message, recipients, sender):
     cur = con.cursor()
     cur.execute("INSERT INTO messages (messageID, timestamp, message, recipientUUID, senderUUID) VALUES (?, ?, ?, ?, ?)", (message_uuid, converted_timestamp, message, recipient_uuid, sender_uuid))
     con.commit()
+
+def message_history(username):
+    mapping = {}
+
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    cur.execute("SELECT timestamp, message FROM users u JOIN messages m ON u.uuid = m.senderUUID WHERE u.username = (?)", (username,))
+    records = cur.fetchall()
+
+    for timestamp, message in records:
+        dt_object = datetime.datetime.fromtimestamp(float(timestamp)).strftime("%d/%m/%Y %H:%M:%S")
+        mapping[dt_object] = message
+
+    return mapping
