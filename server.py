@@ -81,15 +81,36 @@ def receive():
                     server.close()
                 except OSError:
                     break
-        clients.append(client)
+        if action == "DELETE":
+            if database.check_password(username, password):
+                print(f"Deleting user {username}")
+                deleted = database.delete_user(username)
+                if deleted:
+                    print(f"Sucessfully deleted user {username}")
+                    client.send(f"Sucessfully deleted user {username}".encode('ascii'))
+                    client.send('DELETE_RETURN'.encode('ascii'))
+                else:
+                    print(f"Error deleting user {username}")
+                    client.send(f"Error deleting user {username}".encode('ascii'))
+                    client.send('DELETE_RETURN'.encode('ascii'))
 
-        # print and broadcast username
-        broadcast(f"{username} joined the chat\n".encode('ascii'))
-        client.send('Connected to the server'.encode('ascii'))
+            else:
+                print(f"Failed to find user {username}")
+                client.send(f"Invalid user credentials for {username}".encode('ascii'))
+                client.send('DELETE_RETURN'.encode('ascii'))
 
-        # start handling thread for client
-        thread = threading.Thread(target=handle, args=(client,))
-        thread.start()
+        # Display successful authentication message
+        if action != "DELETE":
+
+            clients.append(client)
+
+            # print and broadcast username
+            broadcast(f"{username} joined the chat\n".encode('ascii'))
+            client.send('Connected to the server'.encode('ascii'))
+
+            # start handling thread for client
+            thread = threading.Thread(target=handle, args=(client,))
+            thread.start()
 
 def main():
     print("Server is listening...")

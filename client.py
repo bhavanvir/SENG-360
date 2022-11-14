@@ -30,6 +30,8 @@ def receive():
             client.close()
             # dirty solution to force program to exit without waiting for threads to finish
             os._exit(1)
+        elif message == 'DELETE_RETURN':
+            os._exit(1)
         else:
             print(message)
 
@@ -46,11 +48,14 @@ def main():
     global username
     global password 
 
-    query = input("Do you want to login or register?: ")
-    if query == "login":
+    query = input("Do you want to login (1), register (2) or delete an account (3) ?: ")
+    
+    if query == "1" or query == "login":
         client.send('LOGIN'.encode('ascii'))
-    elif query == "register":
+    elif query == "2" or query == "register":
         client.send('REGISTER'.encode('ascii'))
+    elif query == "3" or query == "delete":
+        client.send('DELETE'.encode('ascii'))
     else:
         print("Invalid input")
         main()
