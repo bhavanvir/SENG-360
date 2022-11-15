@@ -81,15 +81,27 @@ def insert_message(message, recipients, sender):
     con.commit()
 
 def message_history(username):
-    mapping = {}
-
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
     cur.execute("SELECT timestamp, message FROM users u JOIN messages m ON u.uuid = m.senderUUID WHERE u.username = (?)", (username,))
     records = cur.fetchall()
 
+    i = 0
+    output = f"""\nSuccessfully deleted the following messages for {username}:"""
     for timestamp, message in records:
-        dt_object = datetime.datetime.fromtimestamp(float(timestamp)).strftime("%d/%m/%Y %H:%M:%S")
-        mapping[dt_object] = message
+        if i == 0 or i == len(records):
+            output += "\n"
 
-    return mapping
+        dt_object = datetime.datetime.fromtimestamp(float(timestamp)).strftime("%Y/%m/%d %H:%M:%S")
+        output += f"{dt_object}: {message}\n"
+    
+        i += 1
+
+    return output
+
+def delete_messages(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    username_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(username)))
+    cur.execute("DELETE FROM messages WHERE senderUUID = (?)", (username_uuid,))
+    con.commit()
