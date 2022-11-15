@@ -61,7 +61,7 @@ def main():
         print("Invalid input")
         main()
     
-    username = input("Enter username: ",)
+    username = input("Enter username: ")
     password = maskpass.askpass(prompt="Password: ")
 
     # start receiving thread
