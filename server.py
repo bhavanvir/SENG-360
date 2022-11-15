@@ -81,27 +81,35 @@ def receive():
                     server.close()
                 except OSError:
                     break
-        if action == "DELETE":
+        elif action == "DELETE":
             if database.check_password(username, password):
                 print(f"Deleting user {username}")
                 deleted = database.delete_user(username)
                 if deleted:
                     print(f"Sucessfully deleted user {username}")
                     client.send(f"Sucessfully deleted user {username}".encode('ascii'))
-                    client.send('DELETE_RETURN'.encode('ascii'))
+                    client.send('FAIL'.encode('ascii'))
                 else:
                     print(f"Error deleting user {username}")
                     client.send(f"Error deleting user {username}".encode('ascii'))
-                    client.send('DELETE_RETURN'.encode('ascii'))
-
+                    client.send('FAIL'.encode('ascii'))
             else:
                 print(f"Failed to find user {username}")
                 client.send(f"Invalid user credentials for {username}".encode('ascii'))
-                client.send('DELETE_RETURN'.encode('ascii'))
+                client.send('FAIL'.encode('ascii'))
+        elif action == "HISTORY":
+            if database.message_history(username):
+                print(f"Succesfully deleted message history for {username}")
+                history = database.message_history(username)
+                database.delete_messages(username)
+                client.send(history.encode('ascii'))
+            else:
+                print(f"Failed to delete message history for {username}")
+                client.send(f"Failed to find message history for {username}".encode('ascii'))
+                client.send('FAIL'.encode('ascii'))
 
-        # Display successful authentication message
         if action != "DELETE":
-
+            # Display successful authentication message
             clients.append(client)
 
             # print and broadcast username
