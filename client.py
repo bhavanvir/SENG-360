@@ -1,6 +1,7 @@
 import threading
 import socket
 import os
+import maskpass
 
 # choose a username and password
 username = ""
@@ -61,7 +62,7 @@ def main():
         main()
     
     username = input("Enter username: ")
-    password = input("Enter password: ")
+    password = maskpass.askpass(prompt="Enter password: ")
 
     # start receiving thread
     receive_thread = threading.Thread(target=receive)
