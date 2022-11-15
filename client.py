@@ -62,7 +62,7 @@ def main():
         main()
     
     username = input("Enter username: ")
-    password = maskpass.askpass(prompt="Password: ")
+    password = maskpass.askpass(prompt="Enter password: ")
 
     # start receiving thread
     receive_thread = threading.Thread(target=receive)
