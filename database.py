@@ -24,7 +24,6 @@ def initialize():
     FOREIGN KEY (senderUUID) REFERENCES users (uuid))''')
     con.commit()
 
-
 def insert_user(username, password):
     username_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(username)))
     password_salt = bcrypt.gensalt()
