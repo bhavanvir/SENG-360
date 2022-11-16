@@ -1,4 +1,4 @@
-# SENG-360: Security Engineering
+# SENG 360: Security Engineering
 The objective of this course is to introduce students to a broad range of topics related to this discipline, including an overview of computer security, protection, disaster planning, and recovery. Risk analysis and security plans. Basics of cryptography. Public key cryptography and protocols. Security models, kernel design and systems testing. Database, network and Web security. The course discusses applications which need various combinations of confidentiality, availability, integrity and covertness properties; mechanisms to incorporate these properties in systems.
 
 ## Project Objective 
@@ -17,13 +17,27 @@ The objective is to design and implement a secure messaging application.
 - SM must be implemented in Python
 
 ## Installation
+Clone the repository.
+```bash
+git clone https://github.com/bhavanvir/SENG-360
 ```
-Clone the Repository
-git clone https://github.com/bhavanvir/SENG-360.git
 
-Install dependencies
+Change your directory to the root of the project.
+```bash
+cd SENG-360
+```
+
+Install the dependencies.
+```bash
 pip install -r requirements.txt
+```
 
-Start the application
-TBD
+Run the server.
+```bash
+python server.py
+```
+
+Run the client.
+```bash
+python client.py
 ```
