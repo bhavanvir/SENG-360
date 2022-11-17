@@ -80,12 +80,6 @@ def receive():
                 client.send(f"{username} already exists".encode('ascii'))
                 client.send('FAIL'.encode('ascii'))
                 print(f"Attemped to register client with username {username}, but it already exists")
-
-                try:
-                    server.shutdown(socket.SHUT_RDWR)
-                    server.close()
-                except OSError:
-                    break
         elif action == "DELETE":
             if database.check_password(username, password):
                 print(f"Deleting user {username}")
