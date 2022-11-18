@@ -44,6 +44,10 @@ def handle(client):
 # receive and broadcast messages
 def receive():
     while True:
+        
+        # Variable to check if successful user authentication has occured
+        SUCCESS_LOGIN = False
+
         # accept connection
         client, address = server.accept()
         print(f"Connected with {str(address)}")
@@ -62,25 +66,20 @@ def receive():
             if database.check_password(username, password):
                 print(f"Succeeded in logging in client with username {username}")
                 client.send(f"Successfully logged in as {username}".encode('ascii'))
+                SUCCESS_LOGIN = True
             else:
                 print(f"Failed in logging in client with username {username}")
                 client.send(f"Failed to log in as {username}".encode('ascii'))
                 client.send('FAIL'.encode('ascii'))
-                exit(1)
         elif action == "REGISTER":
             if database.insert_user(username, password):
                 print(f"Registered client with username {username}")
                 client.send(f"Successfully registered as {username}".encode('ascii'))
+                SUCCESS_LOGIN = True
             else:
                 client.send(f"{username} already exists".encode('ascii'))
                 client.send('FAIL'.encode('ascii'))
                 print(f"Attemped to register client with username {username}, but it already exists")
-
-                try:
-                    server.shutdown(socket.SHUT_RDWR)
-                    server.close()
-                except OSError:
-                    break
         elif action == "DELETE":
             if database.check_password(username, password):
                 print(f"Deleting user {username}")
@@ -108,7 +107,7 @@ def receive():
                 client.send(f"Failed to find message history for {username}".encode('ascii'))
                 client.send('FAIL'.encode('ascii'))
 
-        if action != "DELETE":
+        if SUCCESS_LOGIN == True:
             # Display successful authentication message
             clients.append(client)
 
