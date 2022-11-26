@@ -40,13 +40,16 @@ def receive():
 def show_message_options():
     while True:
         query = input("Do you want to send a message to a user (1) or see your message history with a user (2): ")
+        # Send messagec case
         if query == "1":
             recipient = input("Enter the recipient's username: ")
+            # This message will be sent encrypted once end-to-end messaging is added
             message = input(f"Enter the message you would like to send to {recipient}: ")
             package = pickle.dumps(("SEND_MSG", recipient, message))
             client.send(package)
             return_message = client.recv(1024).decode('ascii')
             print(return_message)
+        # Retrieve message history case
         elif query == "2":
             recipient = input("Enter the username to see your message history with them: ")
             package = pickle.dumps(("GET_HISTORY", recipient))
@@ -57,8 +60,8 @@ def show_message_options():
                 print(f"No messaging history found with user {recipient}")
             else:
                 for message_tuple in messages:
-                    print(f"<{message_tuple[0]}> {message_tuple[1]}")
-            
+                    # Once end-to-end encyption is implemented, we need to decrypt the content of message_tuple[1]
+                    print(f"<{message_tuple[0]} @ {message_tuple[2]}> {message_tuple[1]}")
         else:
             print("Invalid input")
 

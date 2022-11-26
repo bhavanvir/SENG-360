@@ -92,10 +92,11 @@ def get_uuid(username):
     return records[0]
 
 
-def geT_message_history(requester, reciever):
+def get_message_history_between_users(requester, reciever):
    
     # Organize the message packets in the format (sender, message)
     messages = []
+    
     try:
         # Get the UUID of the username's 
         requester_uuid = get_uuid(requester)
@@ -107,10 +108,13 @@ def geT_message_history(requester, reciever):
         for row in records:
             sender_uuid = row[4]
             message = row[2]
+            timestamp = datetime.datetime.fromtimestamp(int(float(row[1])))
+            print(timestamp)
+
             if sender_uuid == requester_uuid:
-                messages.append( (requester, message) )
+                messages.append((requester, message, timestamp)) 
             else:
-                messages.append( (reciever, message) )
+                messages.append((reciever, message, timestamp)) 
         return messages
     except:
         return messages

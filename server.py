@@ -132,16 +132,11 @@ def receive():
                 elif action == "GET_HISTORY":
                     recipient = data_obj[1]
                     # Send message packets to the client
-                    messages = database.geT_message_history(username, recipient)
+                    messages = database.get_message_history_between_users(username, recipient)
                     package = pickle.dumps(messages)
                     client.send(package)
 
                     
-                        
-
-
-
-
             # print and broadcast username
             #broadcast(f"{username} joined the chat\n".encode('ascii'))
             #client.send('Connected to the server'.encode('ascii'))
