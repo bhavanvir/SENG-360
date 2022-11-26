@@ -66,15 +66,11 @@ def check_password(username, password):
     except IndexError:
         pass
 
-def insert_message(message, recipients, sender):
+def insert_message(message, recipient, sender):
     recipient_uuid = ""
-    print(recipients)
-    if recipients:
-        for i in range(len(recipients)):
-            recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipients[i])))
-            if i != len(recipients) - 1:
-                recipient_uuid += ", "
-    elif not recipients:
+    if recipient:
+        recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipient)))
+    elif not recipient:
         recipient_uuid = None
 
     message_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(message)))
