@@ -37,6 +37,14 @@ def insert_user(username, password):
     except sqlite3.IntegrityError:
         return False
 
+def user_exists(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    rows = cur.execute("SELECT * FROM users WHERE username=?", (username, )).fetchone()
+    if rows:
+        return True
+    return False
+
 def delete_user(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -58,14 +66,11 @@ def check_password(username, password):
     except IndexError:
         pass
 
-def insert_message(message, recipients, sender):
+def insert_message(message, recipient, sender):
     recipient_uuid = ""
-    if recipients:
-        for i in range(len(recipients)):
-            recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipients[i])))
-            if i != len(recipients) - 1:
-                recipient_uuid += ", "
-    elif not recipients:
+    if recipient:
+        recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipient)))
+    elif not recipient:
         recipient_uuid = None
 
     message_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(message)))
@@ -78,6 +83,42 @@ def insert_message(message, recipients, sender):
     cur = con.cursor()
     cur.execute("INSERT INTO messages (messageID, timestamp, message, recipientUUID, senderUUID) VALUES (?, ?, ?, ?, ?)", (message_uuid, converted_timestamp, message, recipient_uuid, sender_uuid))
     con.commit()
+
+def get_uuid(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    records = cur.execute("SELECT * FROM users WHERE username=?", (username, ))
+    records = cur.fetchall()[0]
+    return records[0]
+
+
+def get_message_history_between_users(requester, reciever):
+   
+    # Organize the message packets in the format (sender, message)
+    messages = []
+    
+    try:
+        # Get the UUID of the username's 
+        requester_uuid = get_uuid(requester)
+        reciever_uuid = get_uuid(reciever)
+        
+        con = sqlite3.connect('client_database.db')
+        cur = con.cursor()
+        cur.execute("SELECT * FROM messages WHERE (senderUUID = (?) AND recipientUUID = (?)) OR (senderUUID = (?) AND recipientUUID = (?))", (requester_uuid, reciever_uuid, reciever_uuid, requester_uuid))
+        records = cur.fetchall()
+        
+        for row in records:
+            sender_uuid = row[4]
+            message = row[2]
+            timestamp = datetime.datetime.fromtimestamp(int(float(row[1])))
+            if sender_uuid == requester_uuid:
+                messages.append((requester, message, timestamp)) 
+            else:
+                messages.append((reciever, message, timestamp)) 
+        return messages
+    
+    except:
+        return messages
 
 def message_history(username):
     con = sqlite3.connect('client_database.db')
