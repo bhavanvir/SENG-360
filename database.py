@@ -37,6 +37,14 @@ def insert_user(username, password):
     except sqlite3.IntegrityError:
         return False
 
+def user_exists(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    rows = cur.execute("SELECT * FROM users WHERE username=?", (username, )).fetchone()
+    if rows:
+        return True
+    return False
+
 def delete_user(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -60,6 +68,7 @@ def check_password(username, password):
 
 def insert_message(message, recipients, sender):
     recipient_uuid = ""
+    print(recipients)
     if recipients:
         for i in range(len(recipients)):
             recipient_uuid += str(uuid.uuid5(uuid.NAMESPACE_DNS, str(recipients[i])))

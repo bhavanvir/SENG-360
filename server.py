@@ -1,6 +1,7 @@
 import threading 
 import socket
 import database
+import pickle
 
 # localhost 
 host = '127.0.0.1'
@@ -111,9 +112,29 @@ def receive():
             # Display successful authentication message
             clients.append(client)
 
+            # Show the messaging options to the user
+            client.send('SHOW_MESSAGING_OPTIONS'.encode('ascii'))
+
+            # Now that the user has logged in, we will process the subsequent messaging requests
+            while True:
+                data = client.recv(1024)
+                data_obj = pickle.loads(data)
+                action, recipient, message = data_obj[0], data_obj[1], data_obj[2]
+                if action == "SEND_MSG":
+                    if database.user_exists(recipient):
+                        print(f"Sending message to: {recipient}")
+                        database.insert_message(message, username, [recipient])
+                        client.send(f"Sent messsage to {recipient}".encode('ascii'))
+                    else:
+                        print(f"Username: {username} does not exists, therefore the message could not be sent")
+                        client.send(f"Username: {username} does not exists, therefore the message could not be sent".encode('ascii'))
+
+
+
+
             # print and broadcast username
-            broadcast(f"{username} joined the chat\n".encode('ascii'))
-            client.send('Connected to the server'.encode('ascii'))
+            #broadcast(f"{username} joined the chat\n".encode('ascii'))
+            #client.send('Connected to the server'.encode('ascii'))
 
             # start handling thread for client
             thread = threading.Thread(target=handle, args=(client,))
