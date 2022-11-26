@@ -119,15 +119,25 @@ def receive():
             while True:
                 data = client.recv(1024)
                 data_obj = pickle.loads(data)
-                action, recipient, message = data_obj[0], data_obj[1], data_obj[2]
+                action = data_obj[0]
                 if action == "SEND_MSG":
+                    recipient, message = data_obj[1], data_obj[2]
                     if database.user_exists(recipient):
-                        print(f"Sending message to: {recipient}")
-                        database.insert_message(message, username, [recipient])
+                        database.insert_message(message, recipient, username)
+                        print(f"Sent message to: {recipient}")
                         client.send(f"Sent messsage to {recipient}".encode('ascii'))
                     else:
-                        print(f"Username: {username} does not exists, therefore the message could not be sent")
-                        client.send(f"Username: {username} does not exists, therefore the message could not be sent".encode('ascii'))
+                        print(f"Username: {username} does not exist, therefore the message could not be sent")
+                        client.send(f"Username: {username} does not exist, therefore the message could not be sent".encode('ascii'))
+                elif action == "GET_HISTORY":
+                    recipient = data_obj[1]
+                    # Send message packets to the client
+                    messages = database.geT_message_history(username, recipient)
+                    package = pickle.dumps(messages)
+                    client.send(package)
+
+                    
+                        
 
 
 

@@ -84,6 +84,37 @@ def insert_message(message, recipient, sender):
     cur.execute("INSERT INTO messages (messageID, timestamp, message, recipientUUID, senderUUID) VALUES (?, ?, ?, ?, ?)", (message_uuid, converted_timestamp, message, recipient_uuid, sender_uuid))
     con.commit()
 
+def get_uuid(username):
+    con = sqlite3.connect('client_database.db')
+    cur = con.cursor()
+    records = cur.execute("SELECT * FROM users WHERE username=?", (username, ))
+    records = cur.fetchall()[0]
+    return records[0]
+
+
+def geT_message_history(requester, reciever):
+   
+    # Organize the message packets in the format (sender, message)
+    messages = []
+    try:
+        # Get the UUID of the username's 
+        requester_uuid = get_uuid(requester)
+        reciever_uuid = get_uuid(reciever)
+        con = sqlite3.connect('client_database.db')
+        cur = con.cursor()
+        cur.execute("SELECT * FROM messages WHERE (senderUUID = (?) AND recipientUUID = (?)) OR (senderUUID = (?) AND recipientUUID = (?))", (requester_uuid, reciever_uuid, reciever_uuid, requester_uuid))
+        records = cur.fetchall()
+        for row in records:
+            sender_uuid = row[4]
+            message = row[2]
+            if sender_uuid == requester_uuid:
+                messages.append( (requester, message) )
+            else:
+                messages.append( (reciever, message) )
+        return messages
+    except:
+        return messages
+
 def message_history(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()

@@ -48,8 +48,17 @@ def show_message_options():
             return_message = client.recv(1024).decode('ascii')
             print(return_message)
         elif query == "2":
-            username = input("Enter the username to see your message history with them: ")
-        
+            recipient = input("Enter the username to see your message history with them: ")
+            package = pickle.dumps(("GET_HISTORY", recipient))
+            client.send(package)
+            return_package = client.recv(2048)
+            messages = pickle.loads(return_package)
+            if len(messages) == 0:
+                print(f"No messaging history found with user {recipient}")
+            else:
+                for message_tuple in messages:
+                    print(f"<{message_tuple[0]}> {message_tuple[1]}")
+            
         else:
             print("Invalid input")
 
