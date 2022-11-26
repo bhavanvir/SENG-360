@@ -44,6 +44,7 @@ def handle(client):
             print(f"Failed in logging in client with username {username}")
             client.send(f"Failed to log in as {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
+    
     elif action == "REGISTER":
         if database.insert_user(username, password):
             print(f"Registered client with username {username}")
@@ -53,6 +54,7 @@ def handle(client):
             client.send(f"{username} already exists".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
             print(f"Attemped to register client with username {username}, but it already exists")
+    
     elif action == "DELETE":
         if database.check_password(username, password):
             print(f"Deleting user {username}")
@@ -69,6 +71,7 @@ def handle(client):
             print(f"Failed to find user {username}")
             client.send(f"Invalid user credentials for {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
+    
     elif action == "HISTORY":
         if database.message_history(username):
             print(f"Succesfully deleted message history for {username}")
@@ -79,16 +82,21 @@ def handle(client):
             print(f"Failed to delete message history for {username}")
             client.send(f"Failed to find message history for {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
+    
     if SUCCESS_LOGIN == True:
+        
         # Display successful authentication message
         clients.append(client)
+        
         # Show the messaging options to the user
         client.send('SHOW_MESSAGING_OPTIONS'.encode('ascii'))
+        
         # Now that the user has logged in, we will process the subsequent messaging requests
         while True:
             data = client.recv(1024)
             data_obj = pickle.loads(data)
             action = data_obj[0]
+            
             if action == "SEND_MSG":
                 recipient, message = data_obj[1], data_obj[2]
                 if database.user_exists(recipient):
@@ -98,9 +106,10 @@ def handle(client):
                 else:
                     print(f"Username: {username} does not exist, therefore the message could not be sent")
                     client.send(f"Username: {username} does not exist, therefore the message could not be sent".encode('ascii'))
+            
             elif action == "GET_HISTORY":
-                recipient = data_obj[1]
                 # Send message packets to the client
+                recipient = data_obj[1]
                 messages = database.get_message_history_between_users(username, recipient)
                 package = pickle.dumps(messages)
                 client.send(package)
@@ -108,7 +117,6 @@ def handle(client):
 # receive and broadcast messages
 def receive():
     while True:
-        
         # accept connection
         client, address = server.accept()
         print(f"Connected with {str(address)}")

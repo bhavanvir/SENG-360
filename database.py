@@ -101,21 +101,22 @@ def get_message_history_between_users(requester, reciever):
         # Get the UUID of the username's 
         requester_uuid = get_uuid(requester)
         reciever_uuid = get_uuid(reciever)
+        
         con = sqlite3.connect('client_database.db')
         cur = con.cursor()
         cur.execute("SELECT * FROM messages WHERE (senderUUID = (?) AND recipientUUID = (?)) OR (senderUUID = (?) AND recipientUUID = (?))", (requester_uuid, reciever_uuid, reciever_uuid, requester_uuid))
         records = cur.fetchall()
+        
         for row in records:
             sender_uuid = row[4]
             message = row[2]
             timestamp = datetime.datetime.fromtimestamp(int(float(row[1])))
-            print(timestamp)
-
             if sender_uuid == requester_uuid:
                 messages.append((requester, message, timestamp)) 
             else:
                 messages.append((reciever, message, timestamp)) 
         return messages
+    
     except:
         return messages
 
