@@ -29,7 +29,6 @@ finalKey = Util.number.long_to_bytes(shared_key)
 #print(shared_key)
 print('Keys shared')
 
-
 class AESCipherGCM(object):
     def __init__(self, key): 
         self.blockSize = AES.block_size
@@ -58,7 +57,6 @@ class AESCipherGCM(object):
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('utf-8')
 
-
 def receive():
     while True:
         # receive message from server
@@ -70,6 +68,9 @@ def receive():
             client.send(username.encode('ascii'))
         elif message == 'PASS':
             client.send(password.encode('ascii'))
+        elif message == 'KEY':
+            data = bytearray(finalKey)
+            client.send(data)
         elif message == 'SHOW_MESSAGING_OPTIONS':
             show_message_options()
         elif message == 'FAIL':
@@ -109,7 +110,6 @@ def show_message_options():
                     print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(finalKey).decrypt(message_tuple[1])}")
         else:
             print("Invalid input")
-
 
 def write():
     while True:

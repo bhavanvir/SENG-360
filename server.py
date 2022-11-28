@@ -21,7 +21,7 @@ server.listen()
 
 clients = []
 usernames = []
-
+key_mappings = {}
 
 class AESCipherGCM(object):
     def __init__(self, key): 
@@ -51,7 +51,6 @@ class AESCipherGCM(object):
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('ISO-8859-1')
 
-
 # get all clients and send message to all clients
 def broadcast(message):
     for client in clients:
@@ -59,7 +58,6 @@ def broadcast(message):
 
 # handle messages from clients
 def handle(client):
-   
     # Variable to check if successful user authentication has occured
     SUCCESS_LOGIN = False
     
@@ -70,9 +68,13 @@ def handle(client):
     usernames.append(username)
     client.send('PASS'.encode('ascii'))
     password = client.recv(1024).decode('ascii')
+    client.send('KEY'.encode('ascii'))
+    data = client.recv(4096)
+    key = bytearray(data)
     
     if action == "LOGIN":
         if database.check_password(username, password):
+            key_mappings[username] = key
             print(f"Succeeded in logging in client with username {username}")
             client.send(f"Successfully logged in as {username}".encode('ascii'))
             SUCCESS_LOGIN = True
@@ -120,7 +122,6 @@ def handle(client):
             client.send('FAIL'.encode('ascii'))
     
     if SUCCESS_LOGIN == True:
-        
         # Display successful authentication message
         clients.append(client)
         
