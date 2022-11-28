@@ -2,12 +2,18 @@ import threading
 import socket
 import database
 import pickle
+import base64
+import hashlib
+import pyDHE
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto import Util
 
 # localhost 
 host = '127.0.0.1'
 port = 7000
 
-# create socket and bind to port
+# create socket and bind to porty
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
@@ -15,6 +21,36 @@ server.listen()
 
 clients = []
 usernames = []
+
+
+class AESCipherGCM(object):
+    def __init__(self, key): 
+        self.blockSize = AES.block_size
+        self.key = hashlib.sha256(key).digest()
+
+    def _pad(self, payload):
+        padSize = self.blockSize - len(payload) % self.blockSize
+        return payload + chr(padSize) * padSize
+
+    @staticmethod
+    def _unpad(payload):
+        #length = self.blockSize - len(payload) % self.blockSize
+        #return payload[:length]
+        return payload[:-ord(payload[len(payload)-1:])]
+
+    def encrypt(self, plaintext):
+        plaintext = self._pad(plaintext)
+        initializationVector = Random.new().read(AES.block_size)
+        # Use AES-GCM for encryption
+        aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
+        return base64.b64encode(initializationVector + aes_gcm.encrypt(plaintext.encode()))
+
+    def decrypt(self, ciphertext):
+        ciphertext = base64.b64decode(ciphertext)
+        initializationVector = ciphertext[:AES.block_size]
+        aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
+        return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('ISO-8859-1')
+
 
 # get all clients and send message to all clients
 def broadcast(message):
@@ -120,6 +156,13 @@ def receive():
         # accept connection
         client, address = server.accept()
         print(f"Connected with {str(address)}")
+
+        #Key exchange
+        password = pyDHE.new(16)
+        shared_key = password.negotiate(client)
+        finalKey = Util.number.long_to_bytes(shared_key)
+        print('Keys shared')
+        #print(shared_key)
            
          # start handling thread for client
         thread = threading.Thread(target=handle, args=(client,))

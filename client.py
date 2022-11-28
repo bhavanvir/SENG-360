@@ -3,6 +3,12 @@ import socket
 import os
 import maskpass
 import pickle
+import base64
+import hashlib
+import pyDHE
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto import Util
 
 # choose a username and password
 username = ""
@@ -15,6 +21,43 @@ port = 7000
 # connect to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
+
+#Key exchange
+password = pyDHE.new(16)
+shared_key = password.negotiate(client)
+finalKey = Util.number.long_to_bytes(shared_key)
+#print(shared_key)
+print('Keys shared')
+
+
+class AESCipherGCM(object):
+    def __init__(self, key): 
+        self.blockSize = AES.block_size
+        self.key = hashlib.sha256(key).digest()
+
+    def _pad(self, payload):
+        padSize = self.blockSize - len(payload) % self.blockSize
+        return payload + chr(padSize) * padSize
+
+    @staticmethod
+    def _unpad(payload):
+        #length = self.blockSize - len(payload) % self.blockSize
+        #return payload[:length]
+        return payload[:-ord(payload[len(payload)-1:])]
+
+    def encrypt(self, plaintext):
+        plaintext = self._pad(plaintext)
+        initializationVector = Random.new().read(AES.block_size)
+        # Use AES-GCM for encryption
+        aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
+        return base64.b64encode(initializationVector + aes_gcm.encrypt(plaintext.encode()))
+
+    def decrypt(self, ciphertext):
+        ciphertext = base64.b64decode(ciphertext)
+        initializationVector = ciphertext[:AES.block_size]
+        aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
+        return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('utf-8')
+
 
 def receive():
     while True:
@@ -45,7 +88,9 @@ def show_message_options():
             recipient = input("Enter the recipient's username: ")
             # This message will be sent encrypted once end-to-end messaging is added
             message = input(f"Enter the message you would like to send to {recipient}: ")
-            package = pickle.dumps(("SEND_MSG", recipient, message))
+            enc_string = AESCipherGCM(finalKey).encrypt(message)
+            #print(enc_string)
+            package = pickle.dumps(("SEND_MSG", recipient, enc_string))
             client.send(package)
             return_message = client.recv(1024).decode('ascii')
             print(return_message)
@@ -61,7 +106,7 @@ def show_message_options():
             else:
                 for message_tuple in messages:
                     # Once end-to-end encyption is implemented, we need to decrypt the content of message_tuple[1]
-                    print(f"<{message_tuple[0]} @ {message_tuple[2]}> {message_tuple[1]}")
+                    print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(finalKey).decrypt(message_tuple[1])}")
         else:
             print("Invalid input")
 
