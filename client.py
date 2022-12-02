@@ -10,7 +10,7 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto import Util
 
-# choose a username and password
+# Variables to hold the chosen username and password
 username = ""
 password = ""
 
@@ -18,7 +18,7 @@ password = ""
 host = '127.0.0.1'
 port = 7000
 
-# connect to server
+# Connect to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
 
@@ -26,7 +26,6 @@ client.connect((host, port))
 password = pyDHE.new(16)
 shared_key = password.negotiate(client)
 finalKey = Util.number.long_to_bytes(shared_key)
-#print(shared_key)
 print('Keys shared')
 
 class AESCipherGCM(object):
@@ -40,13 +39,12 @@ class AESCipherGCM(object):
 
     @staticmethod
     def _unpad(payload):
-        #length = self.blockSize - len(payload) % self.blockSize
-        #return payload[:length]
         return payload[:-ord(payload[len(payload)-1:])]
 
     def encrypt(self, plaintext):
         plaintext = self._pad(plaintext)
         initializationVector = Random.new().read(AES.block_size)
+
         # Use AES-GCM for encryption
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return base64.b64encode(initializationVector + aes_gcm.encrypt(plaintext.encode()))
@@ -59,8 +57,8 @@ class AESCipherGCM(object):
 
 def receive():
     while True:
-        # receive message from server
-        # if 'USER' send username, if 'PASS' send password, else print message
+        # Receive message from server
+        # If 'USER' send username, if 'PASS' send password, else print message
         message = client.recv(1024).decode('ascii')
         if message == 'ACTION':
             client.send('LOGIN'.encode('ascii'))
@@ -76,7 +74,7 @@ def receive():
         elif message == 'FAIL':
             client.shutdown(socket.SHUT_RDWR)
             client.close()
-            # dirty solution to force program to exit without waiting for threads to finish
+            # Dirty solution to force program to exit without waiting for threads to finish
             os._exit(1)
         else:
             print(message)
@@ -84,13 +82,14 @@ def receive():
 def show_message_options():
     while True:
         query = input("Do you want to send a message to a user (1) or see your message history with a user (2): ")
-        # Send messagec case
+        # Send message case
         if query == "1":
             recipient = input("Enter the recipient's username: ")
+
             # This message will be sent encrypted once end-to-end messaging is added
             message = input(f"Enter the message you would like to send to {recipient}: ")
             enc_string = AESCipherGCM(finalKey).encrypt(message)
-            #print(enc_string)
+
             package = pickle.dumps(("SEND_MSG", recipient, enc_string))
             client.send(package)
             return_message = client.recv(1024).decode('ascii')
@@ -98,26 +97,32 @@ def show_message_options():
         # Retrieve message history case
         elif query == "2":
             recipient = input("Enter the username to see your message history with them: ")
+
             package = pickle.dumps(("GET_HISTORY", recipient))
             client.send(package)
             return_package = client.recv(2048)
+
+            recipient_key = client.recv(4096)
+
             messages = pickle.loads(return_package)
             if len(messages) == 0:
                 print(f"No messaging history found with user {recipient}")
             else:
-                for message_tuple in messages:
-                    # Once end-to-end encyption is implemented, we need to decrypt the content of message_tuple[1]
-                    print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(finalKey).decrypt(message_tuple[1])}")
+                for message_tuple in messages:     
+                    if message_tuple[0] == username:              
+                        print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(finalKey).decrypt(message_tuple[1])}")
+                    else:
+                        print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(recipient_key).decrypt(message_tuple[1])}")
         else:
             print("Invalid input")
 
 def write():
     while True:
-        # send message to server
+        # Send message to server
         message = f'{input("")}'
         client.send(message.encode('ascii'))
 
-        # send username to server
+        # Send username to server
         client.send(username.encode('ascii'))
 
 def main():
@@ -141,16 +146,11 @@ def main():
     username = input("Enter username: ")
     password = maskpass.askpass(prompt="Enter password: ")
 
-    # start receiving thread
+    # Start receiving thread
     receive_thread = threading.Thread(target=receive)
     receive_thread.start()
 
-    # start writing thread
-    #write_thread = threading.Thread(target=write)
-    #write_thread.start()
-
     receive_thread.join()
-    #write_thread.join()
 
 if __name__ == '__main__':
     main()

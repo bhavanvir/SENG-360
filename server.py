@@ -13,7 +13,7 @@ from Crypto import Util
 host = '127.0.0.1'
 port = 7000
 
-# create socket and bind to porty
+# Create socket and bind to porty
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
@@ -33,14 +33,13 @@ class AESCipherGCM(object):
         return payload + chr(padSize) * padSize
 
     @staticmethod
-    def _unpad(payload):
-        #length = self.blockSize - len(payload) % self.blockSize
-        #return payload[:length]
+    def _unpad(payload):    
         return payload[:-ord(payload[len(payload)-1:])]
 
     def encrypt(self, plaintext):
         plaintext = self._pad(plaintext)
         initializationVector = Random.new().read(AES.block_size)
+
         # Use AES-GCM for encryption
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return base64.b64encode(initializationVector + aes_gcm.encrypt(plaintext.encode()))
@@ -51,23 +50,29 @@ class AESCipherGCM(object):
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('ISO-8859-1')
 
-# get all clients and send message to all clients
+# Get all clients and send message to all clients
 def broadcast(message):
     for client in clients:
         client.send(message)
 
-# handle messages from clients
+# Handle messages from clients
 def handle(client):
     # Variable to check if successful user authentication has occured
     SUCCESS_LOGIN = False
     
+    # Variable to check what action the client wants to perform
     action = client.recv(1024).decode('ascii')
-    # request and store username and password
+
+    # Request the client's username
     client.send('USER'.encode('ascii'))
     username = client.recv(1024).decode('ascii')
     usernames.append(username)
+
+    # Request the client's password
     client.send('PASS'.encode('ascii'))
     password = client.recv(1024).decode('ascii')
+
+    # Request the clients final key
     client.send('KEY'.encode('ascii'))
     data = client.recv(4096)
     key = bytearray(data)
@@ -148,34 +153,37 @@ def handle(client):
                 # Send message packets to the client
                 recipient = data_obj[1]
                 messages = database.get_message_history_between_users(username, recipient)
+
                 package = pickle.dumps(messages)
                 client.send(package)
 
-# receive and broadcast messages
+                recipient_key = key_mappings[recipient]
+                client.send(recipient_key)
+
+# Receive and broadcast messages
 def receive():
     while True:
-        # accept connection
+        # Accept connection
         client, address = server.accept()
         print(f"Connected with {str(address)}")
 
-        #Key exchange
+        # Key exchange
         password = pyDHE.new(16)
         shared_key = password.negotiate(client)
         finalKey = Util.number.long_to_bytes(shared_key)
         print('Keys shared')
-        #print(shared_key)
            
-         # start handling thread for client
+         # Start handling thread for client
         thread = threading.Thread(target=handle, args=(client,))
         thread.start()
 
 def main():
     print("Server is listening...")
 
-    # initialize database
+    # Initialize database
     database.initialize()
     
-    # start receiving thread
+    # Start receiving thread
     receive()
 
 if __name__ == "__main__":
