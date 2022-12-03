@@ -28,6 +28,9 @@ shared_key = password.negotiate(client)
 finalKey = Util.number.long_to_bytes(shared_key)
 print('Keys shared')
 
+
+# Create the crypto class that is used to encrypt/decrypt
+# messages between users
 class AESCipherGCM(object):
     def __init__(self, key): 
         self.blockSize = AES.block_size
@@ -55,6 +58,8 @@ class AESCipherGCM(object):
         aes_gcm = AES.new(self.key, AES.MODE_GCM, initializationVector)
         return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('utf-8')
 
+# Reciever thread (used to retrieve messages from the server)
+# None -> None
 def receive():
     while True:
         # Receive message from server
@@ -79,10 +84,15 @@ def receive():
         else:
             print(message)
 
+# Show the messaging options to the user
+# None -. None
 def show_message_options():
     while True:
+
+        # Get the query option from the user
         query = input("Do you want to send a message to a user (1) or see your message history with a user (2): ")
-        # Send message case
+        
+        # Handle the case where the client wants to send a message to another user
         if query == "1":
             recipient = input("Enter the recipient's username: ")
 
@@ -94,7 +104,8 @@ def show_message_options():
             client.send(package)
             return_message = client.recv(1024).decode('ascii')
             print(return_message)
-        # Retrieve message history case
+        
+        # Handle the case where the client wants to retrieve the messsage history with another user
         elif query == "2":
             recipient = input("Enter the username to see your message history with them: ")
 
@@ -113,18 +124,12 @@ def show_message_options():
                         print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(finalKey).decrypt(message_tuple[1])}")
                     else:
                         print(f"<{message_tuple[0]} @ {message_tuple[2]}> {AESCipherGCM(recipient_key).decrypt(message_tuple[1])}")
+        # Handle the incorrect input case
         else:
             print("Invalid input")
 
-def write():
-    while True:
-        # Send message to server
-        message = f'{input("")}'
-        client.send(message.encode('ascii'))
-
-        # Send username to server
-        client.send(username.encode('ascii'))
-
+# Main function
+# None -> None
 def main():
     global username
     global password 

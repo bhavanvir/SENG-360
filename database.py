@@ -3,6 +3,8 @@ import uuid
 import datetime
 import bcrypt
 
+# Initialize the database if it does not already exist
+# None -> None
 def initialize():
     con = sqlite3.connect('client_database.db')
     con.execute("PRAGMA foreign_keys = 1")
@@ -24,6 +26,8 @@ def initialize():
     FOREIGN KEY (senderUUID) REFERENCES users (uuid))''')
     con.commit()
 
+# Insert a user into the user's table. 
+# username (string), password (string) -> Bool
 def insert_user(username, password):
     username_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(username)))
     password_salt = bcrypt.gensalt()
@@ -37,6 +41,8 @@ def insert_user(username, password):
     except sqlite3.IntegrityError:
         return False
 
+# Check if the given username exists in the database
+# username (String) -> Bool
 def user_exists(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -45,6 +51,8 @@ def user_exists(username):
         return True
     return False
 
+# Delete a user from the database
+# username (String) -> Bool
 def delete_user(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -55,6 +63,8 @@ def delete_user(username):
     except:
         return False
 
+# Check if the given credentials are valid
+# username (String), password (String) -> Bool
 def check_password(username, password):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -66,6 +76,8 @@ def check_password(username, password):
     except IndexError:
         pass
 
+# Insert a message to the database
+#  message (String), recipient (String), sender (String) -> None
 def insert_message(message, recipient, sender):
     recipient_uuid = ""
     if recipient:
@@ -84,6 +96,8 @@ def insert_message(message, recipient, sender):
     cur.execute("INSERT INTO messages (messageID, timestamp, message, recipientUUID, senderUUID) VALUES (?, ?, ?, ?, ?)", (message_uuid, converted_timestamp, message, recipient_uuid, sender_uuid))
     con.commit()
 
+# Get the ID of a user
+# username (String) -> uuid (String)
 def get_uuid(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -91,7 +105,8 @@ def get_uuid(username):
     records = cur.fetchall()[0]
     return records[0]
 
-
+# Get the message history between two users
+# Requester (String), Reciever (String) -> messages (List)
 def get_message_history_between_users(requester, reciever):
    
     # Organize the message packets in the format (sender, message)
@@ -120,6 +135,8 @@ def get_message_history_between_users(requester, reciever):
     except:
         return messages
 
+# Delete the message history of a user
+# username (String) -> output message (String)
 def message_history(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
@@ -139,6 +156,8 @@ def message_history(username):
 
     return output
 
+# Delete the message history of a user (This time there is no output message)
+# username (String) -> None
 def delete_messages(username):
     con = sqlite3.connect('client_database.db')
     cur = con.cursor()
