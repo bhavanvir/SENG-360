@@ -23,6 +23,9 @@ clients = []
 usernames = []
 key_mappings = {}
 
+
+# Create the crypto class that is used to encrypt/decrypt
+# messages between users
 class AESCipherGCM(object):
     def __init__(self, key): 
         self.blockSize = AES.block_size
@@ -51,11 +54,13 @@ class AESCipherGCM(object):
         return self._unpad(aes_gcm.decrypt(ciphertext[AES.block_size:])).decode('ISO-8859-1')
 
 # Get all clients and send message to all clients
+# message (String) -> None
 def broadcast(message):
     for client in clients:
         client.send(message)
 
 # Handle messages from clients
+# client (Object) -> None
 def handle(client):
     # Variable to check if successful user authentication has occured
     SUCCESS_LOGIN = False
@@ -77,6 +82,8 @@ def handle(client):
     data = client.recv(4096)
     key = bytearray(data)
     
+    
+    # Handle user login
     if action == "LOGIN":
         if database.check_password(username, password):
             key_mappings[username] = key
@@ -88,6 +95,7 @@ def handle(client):
             client.send(f"Failed to log in as {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
     
+    # Handle account registration
     elif action == "REGISTER":
         if database.insert_user(username, password):
             print(f"Registered client with username {username}")
@@ -98,6 +106,7 @@ def handle(client):
             client.send('FAIL'.encode('ascii'))
             print(f"Attemped to register client with username {username}, but it already exists")
     
+    # Handle account deletion
     elif action == "DELETE":
         if database.check_password(username, password):
             print(f"Deleting user {username}")
@@ -115,6 +124,7 @@ def handle(client):
             client.send(f"Invalid user credentials for {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
     
+    # Handle message history deletion
     elif action == "HISTORY":
         if database.message_history(username):
             print(f"Succesfully deleted message history for {username}")
@@ -126,6 +136,7 @@ def handle(client):
             client.send(f"Failed to find message history for {username}".encode('ascii'))
             client.send('FAIL'.encode('ascii'))
     
+    # Now the user has authenticated themself
     if SUCCESS_LOGIN == True:
         # Display successful authentication message
         clients.append(client)
@@ -139,6 +150,7 @@ def handle(client):
             data_obj = pickle.loads(data)
             action = data_obj[0]
             
+            # Handle the case where the user wants to send a message to another user
             if action == "SEND_MSG":
                 recipient, message = data_obj[1], data_obj[2]
                 if database.user_exists(recipient):
@@ -149,6 +161,7 @@ def handle(client):
                     print(f"Username: {username} does not exist, therefore the message could not be sent")
                     client.send(f"Username: {username} does not exist, therefore the message could not be sent".encode('ascii'))
             
+            # Handle the case where the user wants to retrieve the message history with another user
             elif action == "GET_HISTORY":
                 # Send message packets to the client
                 recipient = data_obj[1]
@@ -161,6 +174,7 @@ def handle(client):
                 client.send(recipient_key)
 
 # Receive and broadcast messages
+# None -> None
 def receive():
     while True:
         # Accept connection
@@ -177,6 +191,8 @@ def receive():
         thread = threading.Thread(target=handle, args=(client,))
         thread.start()
 
+# Main function
+# None -> None
 def main():
     print("Server is listening...")
 
